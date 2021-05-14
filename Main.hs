@@ -1,5 +1,7 @@
+module Main where
+
 import Route
-import RouteGUI
+--import RouteGUI
 import Graph  -- Create a module and use a sensible graph representation
 
 shortestPath :: Graph -> Name -> Name -> Maybe ([Name], Cost)
