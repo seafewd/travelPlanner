@@ -4,8 +4,7 @@ module Graph (
 )
 where
 
-import Route
-import RouteGUI
+
 import Data.Map (Map)
 import qualified Data.Map as M
 
@@ -15,7 +14,7 @@ data Edge a b = Edge {
     label :: b
 }   deriving Show
 
-data Graph a b = Graph {
+newtype Graph a b = Graph {
     adjMap :: Map a [Edge a b]
 } deriving Show
 
@@ -30,27 +29,26 @@ vertices :: Graph a b -> [a]
 vertices = M.keys . adjMap
 
 
--- dijkstra's algorithm
-dijkstra :: Ord a => a -> Graph a b -> Map a (a, b)
-dijkstra = undefined
-
-
 -- add an edge to the graph
-addEdge :: Edge a b -> Graph a b
-addEdge = undefined
+addEdge :: Edge a b -> Graph a b -> Graph a b
+addEdge (Edge src dest l) (Graph a) = undefined
 
 
 -- add a node to the graph
+addNode :: a
 addNode = undefined
 
 
 -- get number of edges
+nEdges :: a
 nEdges = undefined
 
 
 -- get nodes
+nodes :: a
 nodes = undefined
 
 
 -- get neighbors
+neighbours :: a
 neighbours = undefined
