@@ -1,6 +1,6 @@
 module Graph (
     Graph,
-    empty, addEdge, m, graph
+    empty, addEdge
 )
 where
 
@@ -15,7 +15,7 @@ import Data.Maybe
 data Edge a b = Edge {
     src :: a,
     dst :: a,
-    label :: b
+    weight :: b
 }   deriving Show
 
 newtype Graph a b = Graph {
@@ -23,7 +23,44 @@ newtype Graph a b = Graph {
 } deriving Show
 
 
+-- get an empty graph
+empty :: Graph a b
+empty = Graph M.empty
 
+
+-- get vertices
+vertices :: Graph a b -> [a]
+vertices = M.keys . adjMap
+
+
+-- add an edge to the graph
+addEdge :: Ord a => Edge a b -> Graph a b -> Graph a b
+addEdge e@(Edge src _ _) (Graph m) 
+    | M.notMember src m = Graph (M.insert src [e] m)
+    | otherwise = Graph (M.insertWith (++) src [e] m)
+
+
+-- based on key, get edges(value) 
+getEdges :: Ord a => a -> Graph a b -> Maybe [Edge a b]
+getEdges key (Graph m) = M.lookup key m
+
+
+-- add a node to the graph
+addNode :: Ord a => a -> Graph a b -> Graph a b
+addNode node (Graph m) = Graph (M.insert node [] m)
+
+
+-- get number of edges
+--nEdges :: Graph a b -> Int
+--nEdges (Graph m) = foldr (\s n -> length (M.lookup n m) s + n) 0 m
+
+
+-- returns a list with all nodes adjacent to the given node
+neighbours :: Ord a => Graph a b -> a -> [Edge a b]
+neighbours (Graph m) key = fromMaybe [] (M.lookup key m)
+
+
+-- test map
 m = M.fromList [
     ("A", [
         Edge "A" "B" 7,
@@ -52,41 +89,4 @@ m = M.fromList [
     )
     ]
 
-graph :: Graph [Char] Integer
 graph = Graph m
-
--- get an empty graph
-empty :: Graph a b
-empty = Graph M.empty
-
-
--- get vertices
-vertices :: Graph a b -> [a]
-vertices = M.keys . adjMap
-
-
--- add an edge to the graph
-addEdge :: Ord a => Edge a b -> Graph a b -> Graph a b
-addEdge e@(Edge src _ _) (Graph m) = Graph (M.insertWith (++) src [e] m)
-
-
-
--- based on key, get edges(value) 
-getEdges :: Ord a => a -> Graph a b -> Maybe [Edge a b]
-getEdges key (Graph m) = M.lookup key m
-
-
--- add a node to the graph
-addNode :: Ord a => a -> Graph a b -> Graph a b
-addNode node (Graph m) = Graph (M.insert node [] m)
-
-
--- get number of edges
-nEdges :: Graph a b -> Int
-nEdges = undefined
-
-
--- returns a list with all nodes adjacent to the given node
-neighbours :: Ord a => Graph a b -> a -> [Edge a b]
-neighbours (Graph m) key = fromMaybe [] (M.lookup key m)
-
