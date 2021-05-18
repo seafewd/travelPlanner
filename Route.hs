@@ -113,5 +113,9 @@ readLines f = parse . words <$> readFile f
               return (LineTable { lineNumber = line
                                 , stops      = stop : stops
                                 } : rest)
+            [] -> undefined -- to get rid of lint errors...
       _ -> Left $ "Incorrectly formatted line header:\n" ++
                   unwords [l, n]
+  -- to get rid of lint errors...
+  parse [[]] = undefined
+  parse [_:_] = undefined

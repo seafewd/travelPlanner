@@ -6,7 +6,10 @@ import Data.Maybe
 
 -- This is a clever trick to implement
 -- transposition in constant time.
-data Graph t = G { map :: M.Map t (S.Set t), transposeMap :: M.Map t (S.Set t) }
+data Graph t = G { 
+    map :: M.Map t (S.Set t), 
+    transposeMap :: M.Map t (S.Set t) 
+}
 
 -- creates an empty graph
 empty :: Graph t 
