@@ -36,8 +36,9 @@ vertices = M.keys . adjMap
 
 -- add an edge to the graph
 addEdge :: Ord a => Edge a b -> Graph a b -> Graph a b
-addEdge e@(Edge src _ _) (Graph m)
-    | M.notMember src m = Graph (M.insert src [e] m)
+addEdge e@(Edge src dest _) (Graph m)
+    | M.notMember src m = addEdge e $ Graph (M.insert src [] m)
+    | M.notMember dest m = addEdge e $ Graph (M.insert dest [] m)
     | otherwise = Graph (M.insertWith (++) src [e] m)
 
 
@@ -92,24 +93,15 @@ m = M.fromList [
 
 graph = Graph m
 
-getLineInfo :: IO [(String, Integer)]
-getLineInfo =
-  do
-    Right lineTableList <- readLines "input/lines-gbg.txt" -- returns [LineTable]
-    let lineStops = [stops line | line <- lineTableList] -- returns [[LineStop]]
-    let tuples = [(stopName stops, time stops) | stops <- concat lineStops]
-    return tuples
+getLineInfo :: [LineTable] -> [(String, Integer)]
+getLineInfo lt = tuples
+    where
+        lineStops = [stops line | line <- lt]
+        tuples = [(stopName stops, time stops) | stops <- concat lineStops]
 
-    --Right stopList <- readStops "input/stops-gbg.txt" --returns [Stop]
-    --let names = [name s | s <- stopList] -- returns [name]
-    --let stopsWithLineNumber = [(lineNumber line, stops line) | line <- lineTableList]
 
 buildGraph :: Ord a => Graph a b -> [(a, b)] -> Graph a b
 buildGraph (Graph m) [] = Graph m
 buildGraph g ((name, time):snd@(nextName, nextTime):rest)
     | null snd || null rest = addEdge (Edge name name time) g
     | otherwise = buildGraph (addEdge (Edge name nextName time) g) ((nextName, nextTime):rest)
-
-    
---line = [("\214straSjukhuset",0),("H\228rlanda",6),("Redbergsplatsen",2),("Centralstationen",6),("Brunnsparken",2),("Gr\246nsakstorget",2),("Hagakyrkan",2),("J\228rntorget",2),("Olivedalsgatan",2),("Botaniska",2),("Marklandsgatan",3),("Fr\246lundaTorg",6),("Marklandsgatan",6),("Botaniska",3),("Olivedalsgatan",2),("J\228rntorget",2),("Hagakyrkan",2)]
-
