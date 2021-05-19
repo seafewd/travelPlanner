@@ -24,7 +24,7 @@ import qualified Data.PSQueue as PSQ
   -- remove entry (x d z) from q that has the smallest priority (distance) d. z is the node's predecessor
   -- if x is in S, do nothing
   -- else add (x d z) to S and for each outgoing edge x -> y, add (y (d + w) x) to q, where w is the weight of the edge
-shortestPath :: Graph a b -> Name -> Name -> Maybe ([Name], Cost)
+--shortestPath :: Graph a b -> Name -> Name -> Maybe ([Name], Cost)
 shortestPath = undefined
 
 
@@ -35,5 +35,5 @@ startGUI :: IO ()
 startGUI = do
   Right stops <- readStops "input/stops-gbg.txt"
   Right lines <- readLines "input/lines-gbg.txt"
-  let graph = undefined -- TODO: build your graph here using stops and lines
+  let graph = fmap (buildGraph empty) getLineInfo -- TODO: build your graph here using stops and lines
   runGUI stops lines graph shortestPath

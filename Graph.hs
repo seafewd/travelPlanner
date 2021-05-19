@@ -1,6 +1,6 @@
 module Graph (
     Graph,
-    empty, addEdge
+    empty, addEdge, buildGraph, getLineInfo
 )
 where
 
@@ -92,8 +92,8 @@ m = M.fromList [
 
 graph = Graph m
 
-test2 :: IO [(String, Integer)]
-test2 =
+getLineInfo :: IO [(String, Integer)]
+getLineInfo =
   do
     Right lineTableList <- readLines "input/lines-gbg.txt" -- returns [LineTable]
     let lineStops = [stops line | line <- lineTableList] -- returns [[LineStop]]
@@ -106,9 +106,10 @@ test2 =
 
 buildGraph :: Ord a => Graph a b -> [(a, b)] -> Graph a b
 buildGraph (Graph m) [] = Graph m
-buildGraph g@(Graph m) ((name, time):snd@(nextName, nextTime):rest)
+buildGraph g ((name, time):snd@(nextName, nextTime):rest)
     | null snd || null rest = addEdge (Edge name name time) g
     | otherwise = buildGraph (addEdge (Edge name nextName time) g) ((nextName, nextTime):rest)
 
+    
+--line = [("\214straSjukhuset",0),("H\228rlanda",6),("Redbergsplatsen",2),("Centralstationen",6),("Brunnsparken",2),("Gr\246nsakstorget",2),("Hagakyrkan",2),("J\228rntorget",2),("Olivedalsgatan",2),("Botaniska",2),("Marklandsgatan",3),("Fr\246lundaTorg",6),("Marklandsgatan",6),("Botaniska",3),("Olivedalsgatan",2),("J\228rntorget",2),("Hagakyrkan",2)]
 
-line = [("\214straSjukhuset",0),("H\228rlanda",6),("Redbergsplatsen",2),("Centralstationen",6),("Brunnsparken",2),("Gr\246nsakstorget",2),("Hagakyrkan",2),("J\228rntorget",2),("Olivedalsgatan",2),("Botaniska",2),("Marklandsgatan",3),("Fr\246lundaTorg",6),("Marklandsgatan",6),("Botaniska",3),("Olivedalsgatan",2),("J\228rntorget",2),("Hagakyrkan",2)]
