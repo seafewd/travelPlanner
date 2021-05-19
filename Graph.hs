@@ -4,12 +4,13 @@ module Graph (
 )
 where
 
-import qualified Data.PSQueue as PSQ
 import Route
 import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Maybe
+import Data.Either
+import Control.Monad
 
 
 data Edge a b = Edge {
@@ -35,7 +36,7 @@ vertices = M.keys . adjMap
 
 -- add an edge to the graph
 addEdge :: Ord a => Edge a b -> Graph a b -> Graph a b
-addEdge e@(Edge src _ _) (Graph m) 
+addEdge e@(Edge src _ _) (Graph m)
     | M.notMember src m = Graph (M.insert src [e] m)
     | otherwise = Graph (M.insertWith (++) src [e] m)
 
@@ -90,3 +91,25 @@ m = M.fromList [
     ]
 
 graph = Graph m
+
+test2 :: IO [(String, Integer)]
+test2 =
+  do
+    Right lineTableList <- readLines "input/lines-gbg.txt" -- returns [LineTable]
+    let lineStops = [stops line | line <- lineTableList] -- returns [[LineStop]]
+    let tuples = [(stopName stops, time stops) | stops <- concat lineStops]
+    return tuples
+
+    --Right stopList <- readStops "input/stops-gbg.txt" --returns [Stop]
+    --let names = [name s | s <- stopList] -- returns [name]
+    --let stopsWithLineNumber = [(lineNumber line, stops line) | line <- lineTableList]
+
+buildGraph :: Ord a => Graph a b -> [(a, b)] -> Graph a b
+buildGraph (Graph m) [] = Graph m
+buildGraph (Graph m) (_:elem2:_)
+    | null elem2 = addEdge (Edge name name time) g
+buildGraph g@(Graph m) ((name, time):(nextName, nextTime):rest) =
+    buildGraph (addEdge (Edge name nextName time) g) ((nextName, nextTime):rest)
+
+
+line = [("\214straSjukhuset",0),("H\228rlanda",6),("Redbergsplatsen",2),("Centralstationen",6),("Brunnsparken",2),("Gr\246nsakstorget",2),("Hagakyrkan",2),("J\228rntorget",2),("Olivedalsgatan",2),("Botaniska",2),("Marklandsgatan",3),("Fr\246lundaTorg",6),("Marklandsgatan",6),("Botaniska",3),("Olivedalsgatan",2),("J\228rntorget",2),("Hagakyrkan",2)]

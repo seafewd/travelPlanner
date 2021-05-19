@@ -3,6 +3,8 @@ module Main where
 import Route
 import RouteGUI
 import Graph  -- Create a module and use a sensible graph representation
+import qualified Data.PSQueue as PSQ
+
 
 
 -- let map = start node -> 0
@@ -23,7 +25,9 @@ import Graph  -- Create a module and use a sensible graph representation
   -- if x is in S, do nothing
   -- else add (x d z) to S and for each outgoing edge x -> y, add (y (d + w) x) to q, where w is the weight of the edge
 shortestPath :: Graph a b -> Name -> Name -> Maybe ([Name], Cost)
-shortestPath = undefined
+shortestPath = 
+  let pq = PSQ.empty
+  in undefined
 
 
 main :: IO ()
