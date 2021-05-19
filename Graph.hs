@@ -1,7 +1,4 @@
-module Graph (
-    Graph,
-    empty, addEdge, buildGraph, getLineInfo
-)
+module Graph
 where
 
 import Route
@@ -92,16 +89,3 @@ m = M.fromList [
     ]
 
 graph = Graph m
-
-getLineInfo :: [LineTable] -> [(String, Integer)]
-getLineInfo lt = tuples
-    where
-        lineStops = [stops line | line <- lt]
-        tuples = [(stopName stops, time stops) | stops <- concat lineStops]
-
-
-buildGraph :: Ord a => Graph a b -> [(a, b)] -> Graph a b
-buildGraph (Graph m) [] = Graph m
-buildGraph g ((name, time):snd@(nextName, nextTime):rest)
-    | null snd || null rest = addEdge (Edge name name time) g
-    | otherwise = buildGraph (addEdge (Edge name nextName time) g) ((nextName, nextTime):rest)
