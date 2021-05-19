@@ -25,9 +25,7 @@ import qualified Data.PSQueue as PSQ
   -- if x is in S, do nothing
   -- else add (x d z) to S and for each outgoing edge x -> y, add (y (d + w) x) to q, where w is the weight of the edge
 shortestPath :: Graph a b -> Name -> Name -> Maybe ([Name], Cost)
-shortestPath = 
-  let pq = PSQ.empty
-  in undefined
+shortestPath = undefined
 
 
 main :: IO ()
