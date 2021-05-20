@@ -4,7 +4,6 @@ where
 import Route
 import Data.Map (Map)
 import qualified Data.Map as M
-import qualified Data.Set as S
 import Data.Maybe
 import Data.Either
 import Control.Monad
@@ -40,8 +39,8 @@ addEdge e@(Edge src dest _) (Graph m)
 
 
 -- based on key, get edges(value) 
-getEdges :: Ord a => a -> Graph a b -> Maybe [Edge a b]
-getEdges key (Graph m) = M.lookup key m
+edges :: Ord a => a -> Graph a b -> [Edge a b]
+edges key (Graph m) = fromMaybe [] $ M.lookup key m
 
 
 -- add a node to the graph
@@ -54,9 +53,12 @@ addNode node (Graph m) = Graph (M.insert node [] m)
 --nEdges (Graph m) = foldr (\s n -> length (M.lookup n m) s + n) 0 m
 
 
--- returns a list with all nodes adjacent to the given node
-neighbours :: Ord a => Graph a b -> a -> [Edge a b]
-neighbours (Graph m) key = fromMaybe [] (M.lookup key m)
+-- returns a list with all nodes adjacent to the given node in the graph
+neighbors :: Ord a => Graph a b -> a -> [a]
+neighbors (Graph m) key = nVertices
+    where 
+        nEdges = fromMaybe [] (M.lookup key m)  -- get edges of this node
+        nVertices = [dst d | d <- nEdges]       -- get neighbors of node
 
 
 -- test map
