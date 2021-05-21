@@ -7,7 +7,7 @@ import qualified Data.PSQueue as PSQ
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.Maybe
-    
+
 main :: IO ()
 main = startGUI  -- TODO: read arguments, build graph, output shortest path
 
@@ -60,31 +60,57 @@ buildGraph g ((name, time):snd@(nextName, nextTime):rest)
   -- remove entry (x d z) from q that has the smallest priority (distance) d. z is the node's predecessor
   -- if x is in S, do nothing
   -- else add (x d z) to S and for each outgoing edge x -> y, add (y (d + w) x) to q, where w is the weight of the edge
-shortestPath :: (Ord a, Ord b) => Graph a b -> a -> a -> Maybe ([a], b)
-shortestPath graph start end = 
+shortestPath :: (Ord a, Ord b, Num b) => Graph a b -> a -> a -> Maybe ([a], b)
+shortestPath graph start end =
   let
-    pq = PSQ.empty
+    pq = PSQ.insert (start, start) 0 PSQ.empty    -- start node with weight 0 in first pass
     set = S.empty
     in shortestPath' graph start pq set
 
-shortestPath' :: (Ord a, Ord b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set a -> Maybe ([a], b)
+shortestPath' :: (Ord a, Ord b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> Maybe ([a], b)
+--shortestPath' _ _ PSQ.empty _ = PSQ.empty 
 shortestPath' graph currentNode pq set = 
-  let 
-    nbs = neighbors graph currentNode         -- neighbors of currentNode
-    pq = updateQueue graph currentNode nbs    -- add traversal path & weight to pq
-  in undefined
+    let
+      nbs = neighbors graph currentNode                   -- neighbors of currentNode
+      pq = discoverNeighbors graph currentNode nbs        -- add traversal path & weight to pq
+    in
+      undefined
+{-shortestPath' graph currentNode pq set
+  | (currentNode, any, any) `S.member` set = undefined    -- TODO DOES THIS WORK?!?!?!?
+  | otherwise = 
+    let
+      nbs = neighbors graph currentNode                   -- neighbors of currentNode
+      pq = discoverNeighbors graph currentNode nbs        -- add traversal path & weight to pq
+    in
+      undefined-}
 
 
 -- update the priority queue with newly discovered vertices
-updateQueue :: (Ord a, Ord b) => Graph a b -> a -> [a] -> PSQ.PSQ (a, a) b
-updateQueue g@(Graph map) node = undefined
+-- tested, unbelievably scuffed
+discoverNeighbors :: (Ord a, Ord b) => Graph a b -> a -> [a] -> PSQ.PSQ (a, a) b
+discoverNeighbors g@(Graph map) node = undefined
   where
     nEdges = edges node g       -- get a list of edges from this node
     pq = insertPath nEdges pq   -- insert edges along with priority into pq
 
 
 -- use a list of edges to insert a path from source to destination along with weight into PQ
+-- tested, works...
 insertPath :: (Ord a, Ord b) => [Edge a b] -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] pq = pq
 insertPath [Edge src dest weight] pq = PSQ.insert (src, dest) weight pq
 insertPath ((Edge src dest weight):es) pq = insertPath es $ PSQ.insert (src, dest) weight pq
+
+
+someEdges = [
+  Edge "A" "B" 9,
+  Edge "A" "C" 10,
+  Edge "A" "F" 3
+  ]
+
+someNodes = [
+  "A",
+  "B",
+  "E",
+  "F"
+  ]
