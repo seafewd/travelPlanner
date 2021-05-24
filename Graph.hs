@@ -47,6 +47,10 @@ edges key (Graph m) = fromMaybe [] $ M.lookup key m
 addNode :: Ord a => a -> Graph a b -> Graph a b
 addNode node (Graph m) = Graph (M.insert node [] m)
 
+-- get destination node from edge
+getDestNode :: Edge a b -> a
+getDestNode (Edge src dest _) = dest
+
 
 -- get number of edges
 --nEdges :: Graph a b -> Int

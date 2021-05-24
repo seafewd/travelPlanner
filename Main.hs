@@ -63,9 +63,9 @@ buildGraph g ((name, time):snd@(nextName, nextTime):rest)
 shortestPath :: (Ord a, Ord b, Num b) => Graph a b -> a -> a -> Maybe ([a], b)
 shortestPath graph start end =
   let
-    pq = PSQ.insert (start, start) 0 PSQ.empty    -- start node with weight 0 in first pass
-    set = S.empty
-    in buildShortestPath $ shortestPath' graph start pq set
+    -- start node with weight 0 in first pass
+    pq = PSQ.insert (start, start) 0 PSQ.empty
+    in buildShortestPath $ shortestPath' graph start pq S.empty
 
 buildShortestPath :: Num b => S.Set (a, a, b) -> Maybe ([a], b)
 --buildShortestPath S.empty = Nothing
@@ -87,37 +87,38 @@ thrdTriple (_,_,c) = c
       -- if empty, visit it - add to map with cost to node
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> S.Set (a, a, b)
 shortestPath' graph currentNode pq set
-  | PSQ.null pq = set          -- we explored all nodes - return the set of paths
+  -- all nodes explored, return the set of paths
+  | PSQ.null pq = set
+  -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
-      nbs = neighbors graph currentNode                               -- neighbors of currentNode
-      pq = discoverNeighbors graph currentNode $ PSQ.deleteMin pq     -- add traversal path & weight to pq
-    in shortestPath' graph currentNode pq set
+      -- get neighboring edges
+      nEdges = edges currentNode graph
+      -- add traversal path & weight to pq
+      pq = insertPath nEdges set $ PSQ.deleteMin pq
+    in shortestPath' graph currentNode pq set -- <---- WRONG!!! TODOOO
 
 
--- update the priority queue with newly discovered vertices
-discoverNeighbors :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
-discoverNeighbors g node = insertPath nEdges
-  where
-    nEdges = edges node g       -- get a list of edges from this node
-
-
--- use a list of edges to insert a path from source to destination along with weight into PQ
--- also add the weight
-insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
-insertPath [] pq = pq
-insertPath [Edge src dest weight] pq 
-  = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq                  -- insert single element
-insertPath ((Edge src dest weight):es) pq 
-  = insertPath es $ PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq  -- insert from list
+-- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
+insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> S.Set (a, a, b) -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
+insertPath [] _ pq = pq
+-- insert single element
+insertPath [Edge src dest weight] set pq 
+  | src S.member S.loo = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
+-- insert from list
+insertPath ((Edge src dest weight):es) set pq 
+  = insertPath es $ PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
 
 
 someEdges = [
   Edge "A" "B" 7,
   Edge "A" "C" 2,
   Edge "A" "E" 10,
+  Edge "B" "D" 2,
   Edge "C" "D" 5,
-  Edge "D" "F" 11
+  Edge "C" "E" 9,
+  Edge "D" "F" 11,
+  Edge "E" "F" 9
   ]
 someNodes = [
   "A",
@@ -126,7 +127,8 @@ someNodes = [
   "F"
   ]
 
+--someMap = M.fromList [("A", "B", 7), ("A", "C", 2), ("A", "E", 10), ("B", "D", 2), ("C", "D", 5), ("C", "E", 9), ("D", "F", 11), ("E", "F", 9)]
 
-someSet = S.fromList [("A", "B", 10), ("H", "J", 8)]
+someSet = S.fromList [("A", "B", 7), ("A", "C", 2), ("A", "E", 10), ("B", "D", 2), ("C", "D", 5), ("C", "E", 9), ("D", "F", 11), ("E", "F", 9)]
 
 somePQ = PSQ.singleton ("A", "B") 10
