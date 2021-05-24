@@ -65,7 +65,7 @@ shortestPath graph start end =
   let
     pq = PSQ.insert (start, start) 0 PSQ.empty    -- start node with weight 0 in first pass
     set = S.empty
-    in buildShortestPath $ shortestPath'' graph start pq set
+    in buildShortestPath $ shortestPath' graph start pq set
 
 buildShortestPath :: Num b => S.Set (a, a, b) -> Maybe ([a], b)
 --buildShortestPath S.empty = Nothing
@@ -81,30 +81,18 @@ fstTriple (a,_,_) = a
 thrdTriple :: (a, b, c) -> c
 thrdTriple (_,_,c) = c
 
--- help function
--- keep track of set of nodes where weve been
--- and queue with things to visit
+-- keep track of set of nodes where we've been + queue with things to visit
   -- if not empty, grab least element
       -- check if already visited, if so then remove element and call recursively
-      -- if not, visit it - add to map with cost to node
-
-{-shortestPath' :: (Ord a, Ord b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> Maybe ([a], b)
---shortestPath' _ _ PSQ.empty _ = PSQ.empty 
-shortestPath' graph currentNode pq set =
-    let
-      nbs = neighbors graph currentNode                -- neighbors of currentNode
-      pq = discoverNeighbors graph currentNode pq      -- add traversal path & weight to pq
-    in undefined
--}
-
-shortestPath'' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> S.Set (a, a, b)
-shortestPath'' graph currentNode pq set
+      -- if empty, visit it - add to map with cost to node
+shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> S.Set (a, a, b)
+shortestPath' graph currentNode pq set
   | PSQ.null pq = set          -- we explored all nodes - return the set of paths
   | otherwise =
     let
-      nbs = neighbors graph currentNode                   -- neighbors of currentNode
-      pq = discoverNeighbors graph currentNode $ PSQ.deleteMin pq      -- add traversal path & weight to pq
-    in shortestPath'' graph currentNode pq set
+      nbs = neighbors graph currentNode                               -- neighbors of currentNode
+      pq = discoverNeighbors graph currentNode $ PSQ.deleteMin pq     -- add traversal path & weight to pq
+    in shortestPath' graph currentNode pq set
 
 
 -- update the priority queue with newly discovered vertices
@@ -115,17 +103,21 @@ discoverNeighbors g node = insertPath nEdges
 
 
 -- use a list of edges to insert a path from source to destination along with weight into PQ
+-- also add the weight
 insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] pq = pq
---insertPath [Edge src dest weight] pq = PSQ.insert (src, dest) (weight) pq
-insertPath [Edge src dest weight] pq = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
-insertPath ((Edge src dest weight):es) pq = insertPath es $ PSQ.insert (src, dest) weight pq
+insertPath [Edge src dest weight] pq 
+  = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq                  -- insert single element
+insertPath ((Edge src dest weight):es) pq 
+  = insertPath es $ PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq  -- insert from list
 
 
 someEdges = [
-  Edge "A" "B" 9,
-  Edge "A" "C" 10,
-  Edge "A" "F" 3
+  Edge "A" "B" 7,
+  Edge "A" "C" 2,
+  Edge "A" "E" 10,
+  Edge "C" "D" 5,
+  Edge "D" "F" 11
   ]
 someNodes = [
   "A",
