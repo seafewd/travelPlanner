@@ -65,8 +65,9 @@ neighbors (Graph m) key = nVertices
         nVertices = [dst d | d <- nEdges]       -- get neighbors of node
 
 
+
 -- test map
-m = M.fromList [
+testMap = M.fromList [
     ("A", [
         Edge "A" "B" 7,
         Edge "A" "C" 2,
@@ -94,4 +95,4 @@ m = M.fromList [
     )
     ]
 
-graph = Graph m
+graph = Graph testMap
