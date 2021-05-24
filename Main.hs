@@ -60,55 +60,63 @@ buildGraph g ((name, time):snd@(nextName, nextTime):rest)
   -- remove entry (x d z) from q that has the smallest priority (distance) d. z is the node's predecessor
   -- if x is in S, do nothing
   -- else add (x d z) to S and for each outgoing edge x -> y, add (y (d + w) x) to q, where w is the weight of the edge
+  
+--shortestPath = undefined
+
 shortestPath :: (Ord a, Ord b, Num b) => Graph a b -> a -> a -> Maybe ([a], b)
 shortestPath graph start end =
   let
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
-    in buildShortestPath $ shortestPath' graph start pq S.empty
+    nodes = vertices graph
+    in buildShortestPath $ shortestPath' graph nodes pq M.empty
 
-buildShortestPath :: Num b => S.Set (a, a, b) -> Maybe ([a], b)
---buildShortestPath S.empty = Nothing
-buildShortestPath s =
+
+--buildShortestPath map = Just (["A"], 5)
+
+buildShortestPath :: Num b => M.Map a (a, b) -> Maybe ([a], b)
+buildShortestPath m =
   let
-    nodeList = [fstTriple n | n <- S.toList s]
-    totalWeight = sum [thrdTriple n | n <- S.toList s]
+    nodeList = M.keys m--[M.lookup n m | n <- M.toList m]
+    totalWeight = sum [1,2,3]--[M.lookup n | n <- M.toList m]
   in Just (nodeList, totalWeight)
+ 
 
 fstTriple :: (a, b, c) -> a
 fstTriple (a,_,_) = a
 
 thrdTriple :: (a, b, c) -> c
 thrdTriple (_,_,c) = c
+ 
+ 
 
--- keep track of set of nodes where we've been + queue with things to visit
-  -- if not empty, grab least element
-      -- check if already visited, if so then remove element and call recursively
-      -- if empty, visit it - add to map with cost to node
-shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> S.Set (a, a, b) -> S.Set (a, a, b)
-shortestPath' graph currentNode pq set
-  -- all nodes explored, return the set of paths
-  | PSQ.null pq = set
+shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
+shortestPath' graph (node:rest) pq map
+  -- all nodes explored, return the map of paths
+  | PSQ.null pq =  map
   -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
       -- get neighboring edges
-      nEdges = edges currentNode graph
+      nEdges = edges node graph
       -- add traversal path & weight to pq
-      pq = insertPath nEdges set $ PSQ.deleteMin pq
-    in shortestPath' graph currentNode pq set -- <---- WRONG!!! TODOOO
+      pq = insertPath nEdges map $ PSQ.deleteMin pq
+    in shortestPath' graph rest pq map
 
 
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
-insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> S.Set (a, a, b) -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
+insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] _ pq = pq
 -- insert single element
-insertPath [Edge src dest weight] set pq 
-  | src S.member S.loo = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
+insertPath [Edge src dest weight] map pq 
+  | not $ src `M.member` map = PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
 -- insert from list
-insertPath ((Edge src dest weight):es) set pq 
-  = insertPath es $ PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
+insertPath ((Edge src dest weight):es) map pq 
+  | not $ src `M.member` map = insertPath es map $ PSQ.insert (src, dest) (weight + fromMaybe 0 (PSQ.lookup (src, dest) pq)) pq
 
+
+
+insertPathTest = insertPath [Edge "A" "B" 15, Edge "A" "C" 53] M.empty PSQ.empty
 
 someEdges = [
   Edge "A" "B" 7,
