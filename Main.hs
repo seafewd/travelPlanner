@@ -70,8 +70,8 @@ buildShortestPath end map
       buildShortestPath
 -}
 
--- shortestPath' test
---t =  shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
+
+--t = shortestPath' graph allNodes "A" (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
 shortestPath' _ [] _ _ map = map
 shortestPath' graph (node:rest) prevNode pq map
@@ -80,38 +80,39 @@ shortestPath' graph (node:rest) prevNode pq map
   -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
-      -- extract minimum element from pq - [("A","B") :-> 15]
+      -- get minimum element from pq
       minElement = fromJust $ PSQ.findMin pq
-      -- get weight from minElement - 15
-      minWeight = PSQ.prio minElement
+      -- get weight from minElement
+      sourceWeight = PSQ.prio minElement
       -- get second element of the tuple in the key
       sourceNode = fst $ PSQ.key minElement
-      -- get neighboring edges of "A"
+      -- get neighboring edges of current node
       neighboringEdges = edges node graph
-      -- update map with minimum element if it doesn't already exist in map - M.Map "A" ("B", 15)
-      --map' = M.insert node (prevNode, minWeight) map
-      map' = mapInsert node sourceNode minWeight map
+      -- update map with minimum element if it doesn't already exist in map
+      map' = mapInsert node sourceNode sourceWeight map
       -- delete minimum element, add traversal path & weight to pq
-      pq' = insertPath neighboringEdges map' minWeight $ PSQ.deleteMin pq
+      pq' = insertPath neighboringEdges map' sourceWeight $ PSQ.deleteMin pq
     in shortestPath' graph rest prevNode pq' map'
 
 -- insert into map only if key doesn't already exist
 mapInsert :: Ord a => a -> a -> b -> M.Map a (a, b) -> M.Map a (a, b)
-mapInsert node prevNode weight map
+mapInsert node sourceNode weight map
   | node `M.member` map = map
-  | otherwise = M.insert node (prevNode, weight) map
+  | otherwise = M.insert node (sourceNode, weight) map
+
 
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
 insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> b -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] _ _ pq = pq
-insertPath ((Edge src dest weight):es) map prevWeight pq
-  | dest `M.member` map = insertPath es map prevWeight pq
+insertPath ((Edge src dest weight):es) map sourceWeight pq
+  | dest `M.member` map || betterPathExists = insertPath es map sourceWeight pq
   | otherwise =
   let 
-    --edgeWeight = snd (fromJust (M.lookup src map))
-    pq' = PSQ.insert (src, dest) (weight + prevWeight) pq
-  in insertPath es map prevWeight pq'
---  insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
+    pq' = PSQ.insert (src, dest) (weight + sourceWeight) pq
+  in insertPath es map sourceWeight pq'
+  where 
+    totalWeight = weight + sourceWeight
+    betterPathExists = undefined
 
 
 -- given a source node, destination node and a list of edges
