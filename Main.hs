@@ -49,26 +49,40 @@ shortestPath graph start end =
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
     nodes = vertices graph
-    in buildShortestPath $ shortestPath' graph nodes pq M.empty
+    in buildShortestPath end $ shortestPath' graph nodes pq M.empty
 
+
+buildShortestPath = undefined
+{-
+A, (A, 0)
+C, (A, 2)
+D, (C, 5)
+F, (D, 11)
 -- use a map to create the shortest path between two nodes
-buildShortestPath :: Num b => M.Map a (a, b) -> Maybe ([a], b)
-buildShortestPath m =
-  let
-    nodeList = M.keys m--[M.lookup n m | n <- M.toList m]
-    totalWeight = sum [1,2,3]--[M.lookup n | n <- M.toList m]
-  in Just (nodeList, totalWeight)
+buildShortestPath :: Num b => a -> M.Map a (a, b) -> Maybe ([a], b) -> Maybe ([a], b)
+buildShortestPath end map
+  | null map = fromJust Nothing ([], 0)
+  | otherwise =
+    let
+      totalWeight = sum [fromJust $ snd $ M.lookup end map | M.toList map]
+      nodeList = undefined
+    in
+      buildShortestPath
+-}
 
 
+{-
 -- is this real life? OR patterns hello?
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
 shortestPath' graph (node:rest) pq map = shortestPath'' graph (node:rest) pq map
 shortestPath' graph [] pq map = shortestPath'' graph [] pq map
+-}
 
 -- shortestPath' test
 --t =  shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
-shortestPath'' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
-shortestPath'' graph (node:rest) pq map
+shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
+shortestPath' _ [] _ map = map
+shortestPath' graph (node:rest) pq map
   -- all nodes explored, return map of paths
   | PSQ.null pq || null rest = map
   -- otherwise keep adding unexplored nodes to the queue
@@ -86,7 +100,7 @@ shortestPath'' graph (node:rest) pq map
       map = M.insert node (minDestinationNode, minWeight) map
       -- delete minimum element, add traversal path & weight to pq
       pq = insertPath nEdges map $ PSQ.deleteMin pq
-    in shortestPath'' graph rest pq map
+    in shortestPath' graph rest pq map
 
 
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
@@ -102,7 +116,6 @@ insertPath ((Edge src dest weight):es) map pq
   | src `M.member` map = insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
   | otherwise = error "SCUFFED - no path from src to destination"
 --  | otherwise = insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
-
 
 
 -- given a source node, destination node and a list of edges
