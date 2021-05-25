@@ -69,29 +69,47 @@ neighbors (Graph m) key = nVertices
 -- test map
 testMap = M.fromList [
     ("A", [
-        Edge "A" "B" 7,
-        Edge "A" "C" 2,
-        Edge "A" "E" 10
+        Edge "A" "B" 15,
+        Edge "A" "C" 53
         ]
     ),
     ("B", [
-        Edge "B" "D" 2
+        Edge "B" "A" 15,
+        Edge "B" "C" 40,
+        Edge "B" "D" 46
         ]
     ),
     ("C", [
-        Edge "C" "E" 9,
-        Edge "C" "D" 5
+        Edge "C" "A" 53,
+        Edge "C" "B" 40,
+        Edge "C" "E" 31,
+        Edge "C" "G" 17
         ]
     ),
     ("D", [
+        Edge "D" "B" 46,
+        Edge "D" "E" 3,
         Edge "D" "F" 11
         ]
     ),
     ("E", [
-        Edge "E" "F" 9
+        Edge "E" "C" 31,
+        Edge "E" "D" 3,
+        Edge "E" "F" 8,
+        Edge "E" "G" 29
         ]
     ),
-    ("F", []
+    ("F", [
+        Edge "F" "D" 11,
+        Edge "F" "E" 8,
+        Edge "F" "G" 40
+      ]
+    ),
+    ("G", [
+        Edge "F" "D" 11,
+        Edge "F" "E" 8,
+        Edge "G" "G" 40
+      ]
     )
     ]
 

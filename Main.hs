@@ -49,7 +49,7 @@ shortestPath graph start end =
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
     nodes = vertices graph
-    in buildShortestPath end $ shortestPath' graph nodes pq M.empty
+    in buildShortestPath end $ shortestPath' graph nodes start pq M.empty
 
 
 buildShortestPath = undefined
@@ -80,14 +80,17 @@ shortestPath' graph [] pq map = shortestPath'' graph [] pq map
 
 -- shortestPath' test
 --t =  shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
-shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
-shortestPath' _ [] _ map = map
-shortestPath' graph (node:rest) pq map
+shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
+shortestPath' _ [] _ _ map = map
+shortestPath' graph (node:rest) prevNode pq map
   -- all nodes explored, return map of paths
   | PSQ.null pq || null rest = map
   -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
+      -- update map with minimum element if it doesn't already exist in map - M.Map "A" ("B", 15)
+      --map' = M.insert node (prevNode, minWeight) map
+      map' = mapInsert node prevNode minWeight map
       -- extract minimum element from pq - [("A","B") :-> 15]
       minElement = fromJust $ PSQ.findMin pq
       -- get weight from minElement - 15
@@ -95,27 +98,28 @@ shortestPath' graph (node:rest) pq map
       -- get second element of the tuple in the key. this is the destination node - "B"
       minDestinationNode = snd $ PSQ.key minElement
       -- get neighboring edges of "A"
-      nEdges = edges node graph
-      -- update map with minimum element - M.Map "A" ("B", 15)
-      map = M.insert node (minDestinationNode, minWeight) map
+      neighboringEdges = edges node graph
       -- delete minimum element, add traversal path & weight to pq
-      pq = insertPath nEdges map $ PSQ.deleteMin pq
-    in shortestPath' graph rest pq map
+      pq' = insertPath neighboringEdges map' minWeight $ PSQ.deleteMin pq
+    in shortestPath' graph rest node pq' map'
 
+-- insert into map only if key doesn't already exist
+mapInsert :: Ord a => a -> a -> b -> M.Map a (a, b) -> M.Map a (a, b)
+mapInsert node prevNode weight map
+  | node `M.member` map = map
+  | otherwise = M.insert node (prevNode, weight) map
 
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
-insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
-insertPath [] _ pq = pq
--- insert single edge
-insertPath [Edge src dest weight] map pq
-  | src `M.member` map = pq
-  | otherwise = PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
--- insert from list of edges
-insertPath ((Edge src dest weight):es) map pq
-  -- if src is already a key in map, run again with the rest of the list
-  | src `M.member` map = insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
-  | otherwise = error "SCUFFED - no path from src to destination"
---  | otherwise = insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
+insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> b -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
+insertPath [] _ _ pq = pq
+insertPath ((Edge src dest weight):es) map prevWeight pq
+  | dest `M.member` map = insertPath es map prevWeight pq
+  | otherwise =
+  let 
+    --edgeWeight = snd (fromJust (M.lookup src map))
+    pq' = PSQ.insert (src, dest) (weight + prevWeight) pq
+  in insertPath es map prevWeight pq'
+--  insertPath es map $ PSQ.insert (src, dest) (weight + snd (fromJust (M.lookup src map))) pq
 
 
 -- given a source node, destination node and a list of edges
@@ -128,22 +132,38 @@ lookupEdgeWeight src dest (Edge src' dest' weight:es)
 
 
 singleMap = M.singleton "A" ("A", 0)
-multiMap = M.fromList [("A", ("A", 0)), ("A", ("B", 7))]
+multiMap = M.fromList [("A", ("A", 0)), ("A", ("B", 15))]
 
 
 edgesA = [
-  Edge "A" "B" 7,
-  Edge "A" "C" 2,
-  Edge "A" "E" 10
+  Edge "A" "B" 15,
+  Edge "A" "C" 53
+  ]
+
+edgesB = [
+  Edge "B" "A" 15,
+  Edge "B" "C" 40,
+  Edge "B" "D" 46
   ]
 
 edgesC = [
-  Edge "C" "D" 5,
-  Edge "C" "E" 9
+  Edge "C" "A" 53,
+  Edge "C" "B" 40,
+  Edge "C" "E" 31,
+  Edge "C" "G" 17
   ]
 
 edgesD = [
-  Edge "D" "F" 11
+  Edge "D" "B" 46,
+  Edge "D" "F" 11,
+  Edge "D" "E" 3
+  ]
+
+edgesE = [
+  Edge "E" "D" 3,
+  Edge "E" "C" 31,
+  Edge "E" "F" 8,
+  Edge "E" "G" 29
   ]
 
 someNodes = [
@@ -159,4 +179,4 @@ allNodes = vertices graph
 
 someSet = S.fromList [("A", "B", 7), ("A", "C", 2), ("A", "E", 10), ("B", "D", 2), ("C", "D", 5), ("C", "E", 9), ("D", "F", 11), ("E", "F", 9)]
 
---somePQ = PSQ.fromList [("A", "B") :-> 7, ("B", "D") 2]
+--somePQ = PSQ.fromList [("A","B") :-> 15, ("B", "D") :-> 2]
