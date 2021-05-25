@@ -70,38 +70,30 @@ buildShortestPath end map
       buildShortestPath
 -}
 
-
-{-
--- is this real life? OR patterns hello?
-shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
-shortestPath' graph (node:rest) pq map = shortestPath'' graph (node:rest) pq map
-shortestPath' graph [] pq map = shortestPath'' graph [] pq map
--}
-
 -- shortestPath' test
 --t =  shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
 shortestPath' _ [] _ _ map = map
 shortestPath' graph (node:rest) prevNode pq map
   -- all nodes explored, return map of paths
-  | PSQ.null pq || null rest = map
+  | PSQ.null pq = map
   -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
-      -- update map with minimum element if it doesn't already exist in map - M.Map "A" ("B", 15)
-      --map' = M.insert node (prevNode, minWeight) map
-      map' = mapInsert node prevNode minWeight map
       -- extract minimum element from pq - [("A","B") :-> 15]
       minElement = fromJust $ PSQ.findMin pq
       -- get weight from minElement - 15
       minWeight = PSQ.prio minElement
-      -- get second element of the tuple in the key. this is the destination node - "B"
-      minDestinationNode = snd $ PSQ.key minElement
+      -- get second element of the tuple in the key
+      sourceNode = fst $ PSQ.key minElement
       -- get neighboring edges of "A"
       neighboringEdges = edges node graph
+      -- update map with minimum element if it doesn't already exist in map - M.Map "A" ("B", 15)
+      --map' = M.insert node (prevNode, minWeight) map
+      map' = mapInsert node sourceNode minWeight map
       -- delete minimum element, add traversal path & weight to pq
       pq' = insertPath neighboringEdges map' minWeight $ PSQ.deleteMin pq
-    in shortestPath' graph rest node pq' map'
+    in shortestPath' graph rest prevNode pq' map'
 
 -- insert into map only if key doesn't already exist
 mapInsert :: Ord a => a -> a -> b -> M.Map a (a, b) -> M.Map a (a, b)
