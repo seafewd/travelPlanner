@@ -106,9 +106,9 @@ testMap = M.fromList [
       ]
     ),
     ("G", [
-        Edge "F" "D" 11,
-        Edge "F" "E" 8,
-        Edge "G" "G" 40
+        Edge "G" "C" 17,
+        Edge "G" "E" 29,
+        Edge "G" "F" 40
       ]
     )
     ]

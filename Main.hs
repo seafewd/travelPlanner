@@ -81,7 +81,7 @@ shortestPath' graph (node:rest) prevNode pq map
   | otherwise =
     let
       -- get minimum element from pq
-      minElement = fromJust $ PSQ.findMin pq
+      minElement = findMin pq map
       -- get weight from minElement
       sourceWeight = PSQ.prio minElement
       -- get second element of the tuple in the key
@@ -94,6 +94,16 @@ shortestPath' graph (node:rest) prevNode pq map
       pq' = insertPath neighboringEdges map' sourceWeight $ PSQ.deleteMin pq
     in shortestPath' graph rest prevNode pq' map'
 
+
+-- find the minimum element of the PQ
+-- check the second element of the tuple of the binding's minimum element and
+-- see if it's already a member of the map. this means we've already visited this node
+-- so delete it from PQ and keep checking this until we can return something that isn't already in the map
+findMin :: (Ord a, Ord b) => PSQ.PSQ (a, a) b -> M.Map a (a, b) -> PSQ.Binding (a, a) b
+findMin pq map
+  | snd (PSQ.key (fromJust $ PSQ.findMin pq)) `M.member` map = findMin (PSQ.deleteMin pq) map
+  | otherwise = fromJust $ PSQ.findMin pq
+
 -- insert into map only if key doesn't already exist
 mapInsert :: Ord a => a -> a -> b -> M.Map a (a, b) -> M.Map a (a, b)
 mapInsert node sourceNode weight map
@@ -104,9 +114,7 @@ mapInsert node sourceNode weight map
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
 insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> b -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] _ _ pq = pq
-insertPath ((Edge src dest weight):es) map sourceWeight pq
-  | dest `M.member` map = insertPath es map sourceWeight pq
-  | otherwise =
+insertPath ((Edge src dest weight):es) map sourceWeight pq=
   let
     pq' = PSQ.insert (src, dest) totalWeight pq
   in insertPath es map sourceWeight pq'
@@ -115,14 +123,7 @@ insertPath ((Edge src dest weight):es) map sourceWeight pq
     betterPathExists = totalWeight > snd (fromJust (M.lookup src map))
 
 
--- given a source node, destination node and a list of edges
--- find the weight for the edge in the k/v pair
-lookupEdgeWeight :: (Eq a, Num b) => a -> a -> [Edge a b] -> b
-lookupEdgeWeight _ _ [] = error "Missing edge!"
-lookupEdgeWeight src dest (Edge src' dest' weight:es)
-    | src == src' && dest == dest' = weight
-    | otherwise = lookupEdgeWeight src dest es
-
+-- test structs
 
 singleMap = M.singleton "A" ("A", 0)
 multiMap = M.fromList [("A", ("A", 0)), ("A", ("B", 15))]
