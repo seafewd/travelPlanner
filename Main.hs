@@ -105,14 +105,14 @@ mapInsert node sourceNode weight map
 insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> b -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] _ _ pq = pq
 insertPath ((Edge src dest weight):es) map sourceWeight pq
-  | dest `M.member` map || betterPathExists = insertPath es map sourceWeight pq
+  | dest `M.member` map = insertPath es map sourceWeight pq
   | otherwise =
-  let 
-    pq' = PSQ.insert (src, dest) (weight + sourceWeight) pq
+  let
+    pq' = PSQ.insert (src, dest) totalWeight pq
   in insertPath es map sourceWeight pq'
-  where 
+  where
     totalWeight = weight + sourceWeight
-    betterPathExists = undefined
+    betterPathExists = totalWeight > snd (fromJust (M.lookup src map))
 
 
 -- given a source node, destination node and a list of edges
