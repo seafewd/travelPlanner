@@ -48,8 +48,8 @@ shortestPath graph start end =
   let
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
-    nodes = vertices graph
-    in buildShortestPath end $ shortestPath' graph nodes start pq M.empty
+    nodes = neighbors graph start
+    in buildShortestPath end $ shortestPath' graph nodes pq M.empty
 
 
 buildShortestPath = undefined
@@ -72,19 +72,19 @@ buildShortestPath end map
 
 
 --t = shortestPath' graph allNodes "A" (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
-shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
-shortestPath' _ [] _ _ map = map
-shortestPath' graph (node:rest) prevNode pq map
+shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
+shortestPath' _ [] _ map = map
+shortestPath' graph (node:_) pq map
   -- all nodes explored, return map of paths
   | PSQ.null pq = map
   -- otherwise keep adding unexplored nodes to the queue
   | otherwise =
     let
-      -- get minimum element from pq
+      -- get minimum element of pq
       minElement = findMin pq map
       -- get weight from minElement
       sourceWeight = PSQ.prio minElement
-      -- get second element of the tuple in the key
+      -- get source node of the tuple in the key
       sourceNode = fst $ PSQ.key minElement
       -- get neighboring edges of current node
       neighboringEdges = edges node graph
@@ -92,7 +92,8 @@ shortestPath' graph (node:rest) prevNode pq map
       map' = mapInsert node sourceNode sourceWeight map
       -- delete minimum element, add traversal path & weight to pq
       pq' = insertPath neighboringEdges map' sourceWeight $ PSQ.deleteMin pq
-    in shortestPath' graph rest prevNode pq' map'
+    in 
+      shortestPath' graph (addNeighborNodes graph (neighbors graph node) map') pq' map'
 
 
 -- find the minimum element of the PQ
@@ -104,6 +105,12 @@ findMin pq map
   | snd (PSQ.key (fromJust $ PSQ.findMin pq)) `M.member` map = findMin (PSQ.deleteMin pq) map
   | otherwise = fromJust $ PSQ.findMin pq
 
+
+-- add neighboring nodes into list if they aren't already in the visited map
+addNeighborNodes :: Ord a => Graph a b -> [a] -> M.Map a (a, b) -> [a]
+addNeighborNodes graph nodes map = [n | n <- nodes, n `M.notMember` map]
+
+
 -- insert into map only if key doesn't already exist
 mapInsert :: Ord a => a -> a -> b -> M.Map a (a, b) -> M.Map a (a, b)
 mapInsert node sourceNode weight map
@@ -114,7 +121,7 @@ mapInsert node sourceNode weight map
 -- use a list of edges to insert a path from source to destination along with accumulated weight into PQ
 insertPath :: (Ord a, Ord b, Num b) => [Edge a b] -> M.Map a (a, b) -> b -> PSQ.PSQ (a, a) b -> PSQ.PSQ (a, a) b
 insertPath [] _ _ pq = pq
-insertPath ((Edge src dest weight):es) map sourceWeight pq=
+insertPath ((Edge src dest weight):es) map sourceWeight pq =
   let
     pq' = PSQ.insert (src, dest) totalWeight pq
   in insertPath es map sourceWeight pq'
