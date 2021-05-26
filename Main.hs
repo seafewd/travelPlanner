@@ -1,3 +1,10 @@
+{-
+  Authors:
+    Alexander Korpas
+    Robin Karlsson
+    Andreas Hålén
+-}
+
 module Main where
 
 import Route
@@ -48,30 +55,39 @@ shortestPath graph start end =
   let
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
-    nodes = neighbors graph start
-    in buildShortestPath end $ shortestPath' graph nodes pq M.empty
+    path = Just ([], 0)
+  in 
+    buildShortestPath start end path $ shortestPath' graph [start] pq M.empty
 
 
-buildShortestPath = undefined
 {-
 A, (A, 0)
-C, (A, 2)
-D, (C, 5)
-F, (D, 11)
--- use a map to create the shortest path between two nodes
-buildShortestPath :: Num b => a -> M.Map a (a, b) -> Maybe ([a], b) -> Maybe ([a], b)
-buildShortestPath end map
-  | null map = fromJust Nothing ([], 0)
-  | otherwise =
-    let
-      totalWeight = sum [fromJust $ snd $ M.lookup end map | M.toList map]
-      nodeList = undefined
-    in
-      buildShortestPath
+B, (A, 15)
+C, (A, 53)
+D, (B, 61)
+E, (D, 64)
+G, (C, 70)
+F, (D, 72)
 -}
+-- use a map to create the shortest path between two nodes
+buildShortestPath :: (Num b, Eq a, Ord a) => a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
+buildShortestPath current end path map
+  | isNothing path = Nothing
+  | current == end = path
+  | otherwise =
+  let
+    -- node leading to the current node
+    nextNode = fst $ fromJust (M.lookup end map)
+    -- weight for current node
+    weight = snd $ fromJust $ M.lookup end map
+    -- update path to include node path and total weight
+    path' = Just (nextNode:fst (fromJust path), weight + snd (fromJust path))
+  in
+    -- run until we reach the end node
+    buildShortestPath nextNode end path' map
 
 
---t = shortestPath' graph allNodes "A" (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
+--t = shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> [a] -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
 shortestPath' _ [] _ map = map
 shortestPath' graph (node:_) pq map
@@ -92,7 +108,8 @@ shortestPath' graph (node:_) pq map
       map' = mapInsert node sourceNode sourceWeight map
       -- delete minimum element, add traversal path & weight to pq
       pq' = insertPath neighboringEdges map' sourceWeight $ PSQ.deleteMin pq
-    in 
+    in
+      -- run again with updated pq, map and the new list of neighbors that haven't already been visited
       shortestPath' graph (addNeighborNodes graph (neighbors graph node) map') pq' map'
 
 
