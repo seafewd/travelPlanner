@@ -56,26 +56,28 @@ shortestPath graph start end =
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
     path = Just ([], 0)
-  in 
+  in
     buildShortestPath start end path $ shortestPath' graph start pq M.empty
 
 
 -- use a map to create the shortest path between two nodes
-buildShortestPath :: (Num b, Eq a, Ord a) => a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
+buildShortestPath :: (Num b, Eq a, Ord a, Ord b) => a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
 buildShortestPath current end path map
   | isNothing path = Nothing
   | current == end = path
   | otherwise =
   let
     -- node leading to the current node
-    nextNode = fst $ fromJust (M.lookup end map)
+    prevNode = fst $ fromJust (M.lookup end map)
+    -- accumulated weight
+    accWeight = snd (fromJust path)
     -- weight for current node
-    weight = snd $ fromJust $ M.lookup end map
+    weight = (snd $ fromJust $ M.lookup end map)
     -- update path to include node path and total weight
-    path' = Just (nextNode:fst (fromJust path), weight + snd (fromJust path))
+    path' = Just (end : fst (fromJust path), accWeight - weight)
   in
     -- run until we reach the end node
-    buildShortestPath nextNode end path' map
+    buildShortestPath current prevNode path' map
 
 
 --t = shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
@@ -90,15 +92,15 @@ shortestPath' graph node pq map
     let
       -- get source node of the tuple in the key
       sourceNode = fst (PSQ.key (fromJust (PSQ.findMin pq)))
-      -- get destination node of the tuple in the key
+      -- get destination node
       destNode = snd (PSQ.key (fromJust (PSQ.findMin pq)))
       -- get weight
       sourceWeight = PSQ.prio (fromJust (PSQ.findMin pq))
-      -- update map with minimum element
+      -- update map
       map' = M.insert destNode (sourceNode, sourceWeight) map
       -- get outgoing edges
       neighboringEdges = edges destNode graph
-      -- delete minimum element, add traversal path & weight to pq
+      -- update PQ with neighboring edges
       pq' = insertPath neighboringEdges map' sourceWeight pq
     in
       -- run again with updated pq, map and the new list of neighbors that haven't already been visited
