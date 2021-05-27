@@ -64,20 +64,17 @@ shortestPath graph start end =
 buildShortestPath :: (Num b, Eq a, Ord a, Ord b) => a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
 buildShortestPath current end path map
   | isNothing path = Nothing
-  | current == end = path
-  | otherwise =
-  let
+  | current == end = Just (end : fst (fromJust path), abs accWeight - weight)
+  | otherwise = buildShortestPath current prevNode path' map
+  where
     -- node leading to the current node
     prevNode = fst $ fromJust (M.lookup end map)
-    -- accumulated weight
+    -- weight to get to this node
     accWeight = snd (fromJust path)
     -- weight for current node
-    weight = (snd $ fromJust $ M.lookup end map)
+    weight = snd $ fromJust $ M.lookup end map
     -- update path to include node path and total weight
     path' = Just (end : fst (fromJust path), accWeight - weight)
-  in
-    -- run until we reach the end node
-    buildShortestPath current prevNode path' map
 
 
 --t = shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
