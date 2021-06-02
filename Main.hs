@@ -65,11 +65,24 @@ shortestPath graph start end =
   let
     -- start node with weight 0 in first pass
     pq = PSQ.insert (start, start) 0 PSQ.empty
-    path = Just ([], 0)
+    path = Just []
+    map = shortestPath' graph start pq M.empty
   in
-    buildShortestPath start end end path $ shortestPath' graph start pq M.empty
+    Just (fromJust $ buildShortestPath start end path map, snd $ fromJust $ M.lookup end map)
 
+-- use a map to create the shortest path between two nodes
+buildShortestPath :: (Eq a, Ord a) => a -> a -> Maybe [a] -> M.Map a (a, b) -> Maybe [a]
+buildShortestPath current next path map
+  | isNothing path = Nothing
+  | current == next = Just $ next : fromJust path
+  | otherwise = buildShortestPath current prevNode path' map
+  where
+    -- node leading to the current node
+    prevNode = fst $ fromJust (M.lookup next map)
+    -- update path to include node path and total weight
+    path' = Just $ next : fromJust path
 
+{-
 -- use a map to create the shortest path between two nodes
 -- super scuffed but it works
 buildShortestPath :: (Num b, Eq a, Ord a, Ord b) => a -> a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
@@ -82,7 +95,7 @@ buildShortestPath current next end path map
     prevNode = fst $ fromJust (M.lookup next map)
     -- update path to include node path and total weight
     path' = Just (next : fst (fromJust path), snd $ fromJust $ M.lookup end map)
-
+-}
 
 -- shortestPath' graph "A" (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
@@ -105,8 +118,7 @@ shortestPath' graph node pq map
       -- get outgoing edges
       neighboringEdges = edges destNode graph
       -- update PQ with neighboring edges
-      pq' = foldr (\(Edge s d w) q -> PSQ.insertWith min (s,d) (sourceWeight+w) q) pq neighboringEdges
-   -- pq' = foldr (\(Edge s d w) q -> PSQ.insert (s,d) (sourceWeight+w) q) pq neighboringEdges
+      pq' = foldr (\(Edge src dest weight) q -> PSQ.insertWith min (src, dest) (sourceWeight + weight) q) pq neighboringEdges
     in
       -- run again with updated pq, map and the new list of neighbors that haven't already been visited
       shortestPath' graph destNode pq' map'
