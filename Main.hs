@@ -54,9 +54,9 @@ getLineInfo lt = tuples
 -- if nextTime (the next value in the list) is 0, skip that row
 buildGraph :: (Eq b, Num b) => Ord a => Graph a b -> [(a, b)] -> Graph a b
 buildGraph (Graph m) [] = Graph m
+buildGraph (Graph m) [_] = Graph m
 buildGraph g ((name, time):snd@(nextName, nextTime):rest)
     | nextTime == 0 = buildGraph g (snd:rest)
-    | null snd || null rest = addEdge (Edge name name time) g
     | otherwise = buildGraph (addEdge (Edge name nextName nextTime) g) ((nextName, nextTime):rest)
 
 -- create shortest path between two nodes and display weight
