@@ -7,6 +7,7 @@
 
 module Main where
 
+import System.Environment
 import Route
 import RouteGUI
 import Graph  -- Create a module and use a sensible graph representation
@@ -15,8 +16,19 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.Maybe
 
+-- read arguments, build graph, output shortest path
 main :: IO ()
-main = startGUI  -- TODO: read arguments, build graph, output shortest path
+main = do
+  args <- getArgs
+  let stopsFile = args !! 0
+  let linesFile = args !! 1
+  let startNode = args !! 2
+  let endNode   = args !! 3
+  Right lines <- readLines linesFile
+  let graph = buildGraph empty $ getLineInfo lines
+  let path = shortestPath graph startNode endNode
+  print $ snd $ fromJust path
+  print $ unlines $ fst $ fromJust path
 
 
 -- runGUI start method
@@ -25,7 +37,6 @@ startGUI = do
   Right stops <- readStops "input/stops-gbg.txt"
   Right lines <- readLines "input/lines-gbg.txt"
   let graph = buildGraph empty (getLineInfo lines)
-  print graph
   runGUI stops lines graph shortestPath
 
 
@@ -44,10 +55,9 @@ getLineInfo lt = tuples
 buildGraph :: (Eq b, Num b) => Ord a => Graph a b -> [(a, b)] -> Graph a b
 buildGraph (Graph m) [] = Graph m
 buildGraph g ((name, time):snd@(nextName, nextTime):rest)
-    | nextTime == 0 = buildGraph g rest
+    | nextTime == 0 = buildGraph g (snd:rest)
     | null snd || null rest = addEdge (Edge name name time) g
-    | otherwise = buildGraph (addEdge (Edge name nextName time) g) ((nextName, nextTime):rest)
-
+    | otherwise = buildGraph (addEdge (Edge name nextName nextTime) g) ((nextName, nextTime):rest)
 
 -- create shortest path between two nodes and display weight
 shortestPath :: (Ord a, Ord b, Num b) => Graph a b -> a -> a -> Maybe ([a], b)
@@ -57,27 +67,24 @@ shortestPath graph start end =
     pq = PSQ.insert (start, start) 0 PSQ.empty
     path = Just ([], 0)
   in
-    buildShortestPath start end path $ shortestPath' graph start pq M.empty
+    buildShortestPath start end end path $ shortestPath' graph start pq M.empty
 
 
 -- use a map to create the shortest path between two nodes
-buildShortestPath :: (Num b, Eq a, Ord a, Ord b) => a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
-buildShortestPath current end path map
+-- super scuffed but it works
+buildShortestPath :: (Num b, Eq a, Ord a, Ord b) => a -> a -> a -> Maybe ([a], b) -> M.Map a (a, b) -> Maybe ([a], b)
+buildShortestPath current next end path map
   | isNothing path = Nothing
-  | current == end = Just (end : fst (fromJust path), abs accWeight - weight)
-  | otherwise = buildShortestPath current prevNode path' map
+  | current == next = Just (next : fst (fromJust path), snd $ fromJust $ M.lookup end map)
+  | otherwise = buildShortestPath current prevNode end path' map
   where
     -- node leading to the current node
-    prevNode = fst $ fromJust (M.lookup end map)
-    -- weight to get to this node
-    accWeight = snd (fromJust path)
-    -- weight for current node
-    weight = snd $ fromJust $ M.lookup end map
+    prevNode = fst $ fromJust (M.lookup next map)
     -- update path to include node path and total weight
-    path' = Just (end : fst (fromJust path), accWeight - weight)
+    path' = Just (next : fst (fromJust path), snd $ fromJust $ M.lookup end map)
 
 
---t = shortestPath' graph allNodes (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
+-- shortestPath' graph "A" (PSQ.insert ("A", "A") 0 PSQ.empty) M.empty
 shortestPath' :: (Ord a, Ord b, Num b) => Graph a b -> a -> PSQ.PSQ (a, a) b -> M.Map a (a, b) -> M.Map a (a, b)
 shortestPath' graph node pq map
   -- all nodes explored, return map of paths
@@ -99,6 +106,7 @@ shortestPath' graph node pq map
       neighboringEdges = edges destNode graph
       -- update PQ with neighboring edges
       pq' = insertPath neighboringEdges map' sourceWeight pq
+   -- pq' = foldr (\(Edge s d w) q -> PSQ.insert (s,d) (sourceWeight+w) q) pq neighboringEdges
     in
       -- run again with updated pq, map and the new list of neighbors that haven't already been visited
       shortestPath' graph destNode pq' map'
