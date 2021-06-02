@@ -28,7 +28,7 @@ main = do
   let graph = buildGraph empty $ getLineInfo lines
   let path = shortestPath graph startNode endNode
   print $ snd $ fromJust path
-  print $ unlines $ fst $ fromJust path
+  putStr $ unlines $ fst $ fromJust path
 
 
 -- runGUI start method
@@ -105,7 +105,7 @@ shortestPath' graph node pq map
       -- get outgoing edges
       neighboringEdges = edges destNode graph
       -- update PQ with neighboring edges
-      pq' = insertPath neighboringEdges map' sourceWeight pq
+      pq' = foldr (\(Edge s d w) q -> PSQ.insertWith min (s,d) (sourceWeight+w) q) pq neighboringEdges
    -- pq' = foldr (\(Edge s d w) q -> PSQ.insert (s,d) (sourceWeight+w) q) pq neighboringEdges
     in
       -- run again with updated pq, map and the new list of neighbors that haven't already been visited
